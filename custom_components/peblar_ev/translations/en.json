@@ -1,0 +1,160 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Peblar EV (Modbus)",
+        "description": "Enter the charger's Modbus TCP address. The connection is tested before the entry is created.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "framer": "Framing",
+          "unit_id": "Unit ID"
+        },
+        "data_description": {
+          "host": "The charger's IP address or hostname.",
+          "port": "The charger's Modbus TCP port (502 unless changed).",
+          "framer": "Modbus TCP for a direct connection, RTU over TCP behind a serial gateway.",
+          "unit_id": "The charger's Modbus unit (slave) id."
+        }
+      },
+      "reconfigure": {
+        "title": "Peblar EV (Modbus)",
+        "description": "Update the charger's Modbus TCP address.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "framer": "Framing",
+          "unit_id": "Unit ID"
+        },
+        "data_description": {
+          "host": "The charger's IP address or hostname.",
+          "port": "The charger's Modbus TCP port (502 unless changed).",
+          "framer": "Modbus TCP for a direct connection, RTU over TCP behind a serial gateway.",
+          "unit_id": "The charger's Modbus unit (slave) id."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No Peblar charger answered at that address. Check the host, port, framing and unit id."
+    },
+    "abort": {
+      "already_configured": "This charger is already configured.",
+      "reconfigure_successful": "The charger's address was updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Peblar EV options",
+        "data": {
+          "max_current": "Maximum current (A)",
+          "heartbeat_seconds": "Heartbeat interval (s)",
+          "alive_timeout_seconds": "Watchdog alive timeout (s)",
+          "fallback_current_a": "Watchdog fallback current (A)",
+          "pause_limit_per_10min": "Max pauses per 10 min (relay protection)"
+        },
+        "data_description": {
+          "max_current": "32 A for a 22 kW charger, 16 A for an 11 kW one.",
+          "heartbeat_seconds": "How often the watchdog is fed while charging. Must be shorter than the alive timeout.",
+          "alive_timeout_seconds": "How long the charger waits before falling back. 0 disarms the watchdog.",
+          "fallback_current_a": "What the charger falls back to when the watchdog expires. 0 is a safe stop.",
+          "pause_limit_per_10min": "Pausing more often than this logs a relay-wear warning; the pause still happens."
+        }
+      }
+    }
+  },
+  "selector": {
+    "framer": {
+      "options": {
+        "socket": "Modbus TCP",
+        "rtu": "RTU over TCP"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "power": {
+        "name": "Power"
+      },
+      "current": {
+        "name": "Current"
+      },
+      "energy": {
+        "name": "Energy"
+      },
+      "charge_state": {
+        "name": "Charge state",
+        "state": {
+          "disconnected": "Disconnected",
+          "connected": "Connected",
+          "charging": "Charging",
+          "charging_ventilation": "Charging (ventilation)",
+          "error": "Error",
+          "fault": "Fault",
+          "unknown": "Unknown"
+        }
+      },
+      "current_limit_actual": {
+        "name": "Applied current limit"
+      },
+      "current_limit_source": {
+        "name": "Current limit source",
+        "state": {
+          "unknown": "Unknown",
+          "fixed_cable": "Fixed cable",
+          "thermal": "Thermal",
+          "configuration": "Configuration",
+          "bop": "BOP",
+          "load_balancing": "Load balancing",
+          "user_cable": "User cable",
+          "overcurrent_protection": "Overcurrent protection",
+          "hardware_limit": "Hardware limit",
+          "power_factor": "Power factor",
+          "ocpp": "OCPP",
+          "phase_imbalance": "Phase imbalance",
+          "scheduled_charging": "Scheduled charging",
+          "solar_charging": "Solar charging",
+          "current_slider": "Current slider",
+          "rest_api": "REST API",
+          "modbus_api": "Modbus API",
+          "power_limit_input": "Power limit input",
+          "household_power_limit": "Household power limit",
+          "internal_power_limiter": "Internal power limiter"
+        }
+      },
+      "wlan_signal": {
+        "name": "WLAN signal"
+      },
+      "alive_timeout": {
+        "name": "Watchdog alive timeout"
+      },
+      "fallback_current": {
+        "name": "Watchdog fallback current"
+      }
+    },
+    "binary_sensor": {
+      "charging": {
+        "name": "Charging"
+      },
+      "connected": {
+        "name": "Connected"
+      },
+      "modbus_down": {
+        "name": "Modbus down"
+      }
+    },
+    "number": {
+      "charge_current_limit": {
+        "name": "Charge current limit"
+      }
+    },
+    "switch": {
+      "charge_enable": {
+        "name": "Charge enable"
+      },
+      "watchdog": {
+        "name": "Watchdog"
+      }
+    }
+  }
+}

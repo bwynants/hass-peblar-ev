@@ -1,0 +1,20 @@
+{
+  "domain": "peblar_ev",
+  "name": "Peblar EV (Modbus)",
+  "codeowners": [
+    "@bwynants"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/bwynants/hass-peblar-ev",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/bwynants/hass-peblar-ev/issues",
+  "loggers": [
+    "peblar_modbus",
+    "modbus_connection"
+  ],
+  "requirements": [
+    "modbus-connection[pymodbus]>=4.10,<5"
+  ],
+  "version": "0.2.0"
+}
