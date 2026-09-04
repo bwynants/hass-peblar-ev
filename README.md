@@ -58,13 +58,9 @@ peblar_ev/
 └── peblar_modbus/     vendored device library (imported at runtime)
 ```
 
-The library `peblar_modbus/` is not published on PyPI, so it ships 
-inside the integration rather than as a requirement.
-
-```
-cd peblar-modbus && pytest -q && cd ..
-rm -rf peblar_modbus && cp -R peblar-modbus/src/peblar_modbus ./peblar_modbus
-```
+`peblar_modbus/` is not published on PyPI, so it ships inside the integration
+rather than being declared as a requirement. It imports nothing from Home
+Assistant, so it can be exercised on its own.
 
 The only PyPI requirement is `modbus-connection[pymodbus]`.
 
