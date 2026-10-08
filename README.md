@@ -6,7 +6,7 @@ Home Assistant custom integration for the **Peblar** EV charger over Modbus TCP 
 
 ### Prerequisites
 
-- Home Assistant 2026.8.0 or newer
+- Home Assistant 2026.9.0 or newer
 - A Peblar charger reachable over **Modbus TCP** (enable the Modbus TCP server in
   the charger's web interface, default port 502)
 
@@ -62,18 +62,28 @@ peblar_ev/
 rather than being declared as a requirement. It imports nothing from Home
 Assistant, so it can be exercised on its own.
 
-The only PyPI requirement is `modbus-connection[pymodbus]`.
+The only PyPI requirement is `modbus-connection`, which the core Modbus integration
+already ships; this integration depends on `modbus` for the shared connection.
 
 ## Connection ownership
 
-Home Assistant has no shared `modbus_connection` integration yet — the
-[Modbus modernization post](https://developers.home-assistant.io/blog/2026/07/05/modernizing-modbus/)
-asks integrations to hold off on wiring one up — so this integration owns the charger's
-link itself, in `connection.py`. It is built lazily and reconnects on its own, so a
-charger that is rebooting at Home Assistant start does not fail setup.
+The core Modbus integration owns the connection. Since Home Assistant 2026.9 it hands
+out units over connections it shares between integrations (`async_get_unit`, see the
+[Modbus developer docs](https://developers.home-assistant.io/docs/modbus/introduction)),
+and the old `get_hub` path is
+[deprecated](https://developers.home-assistant.io/blog/2026/09/02/modbus-get-hub-deprecation/).
+This integration describes the charger's link in `connection.py` and asks for a unit on
+it; any other integration describing the same charger lands on the same socket, and their
+requests serialize behind its lock.
 
-That file is the whole coupling. When the shared integration lands, borrowing a unit
-from it replaces `connection.py` and nothing else.
+The connection opens on first use and reconnects on its own, so a charger that is
+rebooting at Home Assistant start does not fail setup. It closes when the last entry
+holding a unit on it unloads. A dropped link does **not** reload the entry — that would
+churn a connection other integrations may hold — the coordinator re-asserts the watchdog
+and current limit after the next successful poll instead.
+
+RTU over TCP is described the way the Modbus integration canonicalises it: serial params
+over a `socket://host:port` device.
 
 ## What lives where
 

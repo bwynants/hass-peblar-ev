@@ -8,6 +8,8 @@ single place that issues writes, so nothing races:
   * watchdog arm/disarm (AliveTimeout / FallbackCurrent)
   * heartbeat feeding the watchdog while charging
   * Home-Assistant-is-boss assert of the watchdog on setup and reconnect
+    (re-asserted in place: the Modbus connection is shared, so a drop never
+    reloads the entry)
   * sync-off: drop charge-enable if the charger stops externally
   * link health, for the connectivity sensor
 """
@@ -79,6 +81,8 @@ class PeblarCoordinator(DataUpdateCoordinator[PeblarData]):
         self._actual_zero_since: datetime | None = None
         self._heartbeat_cancel = None
         self._last_success: datetime | None = None
+        # Set when the link drops; the next successful poll re-asserts policy.
+        self._reassert_pending = False
 
     # -- tunables -----------------------------------------------------------
     @property
@@ -130,8 +134,39 @@ class PeblarCoordinator(DataUpdateCoordinator[PeblarData]):
         except PeblarModbusError as err:
             raise UpdateFailed(str(err)) from err
         self._last_success = dt_util.utcnow()
+        if self._reassert_pending:
+            self._reassert_pending = False
+            # Not eager: let the coordinator publish this poll first, so
+            # the re-assert runs against the fresh snapshot.
+            self.hass.async_create_task(
+                self.async_reassert_policy(), eager_start=False
+            )
         self._check_sync_off(data)
         return data
+
+    # -- reconnect ----------------------------------------------------------
+    @callback
+    def mark_connection_lost(self) -> None:
+        """Note that the link dropped, so policy is re-asserted once it is back.
+
+        The connection belongs to the Modbus integration, is shared with any
+        other entry on the same device and reconnects on its own, so a drop
+        must not reload this entry. What a drop invalidates is the policy
+        asserted on the charger - a reboot can leave the watchdog disarmed
+        behind our back - and that is put back after the next successful poll.
+        """
+        self._reassert_pending = True
+
+    async def async_reassert_policy(self) -> None:
+        """Force the charger back in line with Home Assistant after a reconnect.
+
+        Watchdog first, so a stop is guarded before any current is re-applied.
+        """
+        _LOGGER.info(
+            "Peblar: the link is back - re-asserting the watchdog and current limit"
+        )
+        await self.async_apply_watchdog()
+        await self.async_write_effective()
 
     # -- effective current limit -------------------------------------------
     def _effective_current(self) -> float:

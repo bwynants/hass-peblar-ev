@@ -35,7 +35,8 @@
       }
     },
     "error": {
-      "cannot_connect": "No Peblar charger answered at that address. Check the host, port, framing and unit id."
+      "cannot_connect": "No Peblar charger answered at that address. Check the host, port, framing and unit id.",
+      "link_conflict": "This device is already in use by another integration with different link settings (framing). Use the same settings here, or change them there."
     },
     "abort": {
       "already_configured": "This charger is already configured.",
