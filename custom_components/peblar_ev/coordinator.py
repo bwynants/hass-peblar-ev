@@ -83,6 +83,15 @@ class PeblarCoordinator(DataUpdateCoordinator[PeblarData]):
         self._last_success: datetime | None = None
         # Set when the link drops; the next successful poll re-asserts policy.
         self._reassert_pending = False
+        # One-shot timer that wakes the listeners once LINK_DOWN_GRACE has
+        # passed during an outage. Needed because DataUpdateCoordinator only
+        # notifies listeners on the FIRST failed poll (a failure following a
+        # failure is swallowed), so without it the connectivity sensor
+        # evaluates `link_down` 10 s into the outage, sees "not yet", and is
+        # never asked again until the link is back - at which point there is
+        # nothing to report. That is exactly how a 13-hour outage on
+        # 2026-10-29 went unannounced.
+        self._link_down_cancel = None
 
     # -- tunables -----------------------------------------------------------
     @property
@@ -132,8 +141,10 @@ class PeblarCoordinator(DataUpdateCoordinator[PeblarData]):
         try:
             data = await self.device.async_update()
         except PeblarModbusError as err:
+            self._arm_link_down_timer()
             raise UpdateFailed(str(err)) from err
         self._last_success = dt_util.utcnow()
+        self._cancel_link_down_timer()
         if self._reassert_pending:
             self._reassert_pending = False
             # Not eager: let the coordinator publish this poll first, so
@@ -143,6 +154,41 @@ class PeblarCoordinator(DataUpdateCoordinator[PeblarData]):
             )
         self._check_sync_off(data)
         return data
+
+    def _arm_link_down_timer(self) -> None:
+        """Make sure the listeners are woken once the grace period has passed.
+
+        Armed on every failed poll, but only the first one schedules anything;
+        the timer fires at the moment `link_down` turns true (plus a second of
+        slack so the clock comparison cannot land a hair early).
+        """
+        if self._link_down_cancel is not None:
+            return
+        remaining = 0.0
+        if self._last_success is not None:
+            elapsed = dt_util.utcnow() - self._last_success
+            remaining = max((LINK_DOWN_GRACE - elapsed).total_seconds(), 0.0)
+        self._link_down_cancel = async_call_later(
+            self.hass, remaining + 1.0, self._link_down_tick
+        )
+
+    @callback
+    def _cancel_link_down_timer(self) -> None:
+        if self._link_down_cancel is not None:
+            self._link_down_cancel()
+            self._link_down_cancel = None
+
+    @callback
+    def _link_down_tick(self, _now) -> None:
+        self._link_down_cancel = None
+        if self.last_update_success:
+            return
+        _LOGGER.warning(
+            "Peblar: no Modbus reply from the charger for %s - reporting the link down",
+            LINK_DOWN_GRACE,
+        )
+        # Re-evaluates PeblarLinkProblem.is_on -> on.
+        self.async_update_listeners()
 
     # -- reconnect ----------------------------------------------------------
     @callback
@@ -258,6 +304,7 @@ class PeblarCoordinator(DataUpdateCoordinator[PeblarData]):
         if self._debounce_cancel is not None:
             self._debounce_cancel()
             self._debounce_cancel = None
+        self._cancel_link_down_timer()
 
     # -- sync-off -----------------------------------------------------------
     def _check_sync_off(self, data: PeblarData) -> None:
