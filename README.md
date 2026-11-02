@@ -82,6 +82,12 @@ holding a unit on it unloads. A dropped link does **not** reload the entry — t
 churn a connection other integrations may hold — the coordinator re-asserts the watchdog
 and current limit after the next successful poll instead.
 
+Link health is reported by `binary_sensor.peblar_modbus_down`. The coordinator only
+notifies listeners on the first failed poll, so the sensor would never see the 2-minute
+grace period expire on its own; the coordinator arms a one-shot timer on the first failure
+that wakes the listeners when the grace period runs out, and cancels it on the next
+successful poll. A warning is logged at that point.
+
 RTU over TCP is described the way the Modbus integration canonicalises it: serial params
 over a `socket://host:port` device.
 
@@ -108,7 +114,7 @@ and so on, matching the YAML package this replaces.
 | `sensor.peblar_charge_state` | Control-pilot state (A–F), as an enum. |
 | `sensor.peblar_current_limit_actual` / `_source` | What the charger applies, and what is binding it. |
 | `binary_sensor.peblar_charging` / `_connected` | Derived from the pilot state. |
-| `binary_sensor.peblar_modbus_down` | Link down for over 2 minutes. Stays available during an outage. |
+| `binary_sensor.peblar_modbus_down` | On once no poll has succeeded for 2 minutes. Stays available during an outage. |
 
 ## Safety model
 
