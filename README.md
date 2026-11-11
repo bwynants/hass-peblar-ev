@@ -10,7 +10,16 @@ Home Assistant custom integration for the **Peblar** EV charger over Modbus TCP 
 - A Peblar charger reachable over **Modbus TCP** (enable the Modbus TCP server in
   the charger's web interface, default port 502)
 
-### HACS (recommended)
+<!-- ha-marketplace:exclude-start -->
+[![Open your Home Assistant instance and show this repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=bwynants&repository=hass-peblar-ev&category=integration)
+
+### Marketplace (Home Assistant 2026.11 or newer, recommended)
+
+1. Click the badge above, or open **Settings -> Marketplace -> Add from link** (top right; the Marketplace needs a GitHub account connected for custom repositories).
+2. Add `https://github.com/bwynants/hass-peblar-ev` with type **Integration**.
+3. Install **Peblar EV (Modbus)** and restart Home Assistant.
+
+### HACS (Home Assistant 2026.10 or older)
 
 1. In HACS, open the overflow menu -> **Custom repositories**.
 2. Add `https://github.com/bwynants/hass-peblar-ev` with type **Integration**.
@@ -45,6 +54,7 @@ Home Assistant custom integration for the **Peblar** EV charger over Modbus TCP 
                └── exceptions.py
    ```
 2. Restart Home Assistant.
+<!-- ha-marketplace:exclude-end -->
 
 ### Setup
 
